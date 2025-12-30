@@ -8,7 +8,7 @@ use serde_yaml;
 use serde::{Serialize, Deserialize};
 use clap::{Args, Parser, Subcommand};
 
-use crate::client::{Auth, CanineError, MeResponse};
+use crate::client::{Auth, CanineError};
 
 #[derive(Parser, Debug)]
 #[command(name = "k9", version, about = "K9 CLI")]
@@ -102,13 +102,25 @@ impl CanineConfig {
     pub const DEFAULT_HOST: &'static str = "https://canine.sh";
     pub const PATH: &'static str = "~/.canine/canine.yaml";
 
-    pub fn load() -> Self {
+    pub fn gate_directory() {
         let path = Path::new(CanineConfig::PATH);
         let dir = match path.parent() {
             Some(p) => p,
             None => Path::new(".")
         };
         fs::create_dir_all(&dir).expect("Failed to create parent directory");
+    }
+
+    pub fn clear() {
+        CanineConfig::gate_directory();
+        fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(CanineConfig::PATH).unwrap();
+    }
+
+    pub fn load() -> Self {
+        CanineConfig::gate_directory();
 
         fs::OpenOptions::new()
             .write(true)
@@ -161,6 +173,11 @@ async fn handle_login(login: AuthLogin) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+async fn handle_logout() -> Result<(), Box<dyn std::error::Error>> {
+    CanineConfig::clear();
+    Ok(())
+}
+
 async fn status(config: CanineConfig) -> Result<(), Box<dyn std::error::Error>> {
     let token = config
         .token
@@ -168,7 +185,7 @@ async fn status(config: CanineConfig) -> Result<(), Box<dyn std::error::Error>> 
 
     let host = config
         .host
-        .unwrap_or_else(|| "https://canine.sh".to_string());
+        .unwrap_or_else(|| CanineConfig::DEFAULT_HOST.to_string());
 
     let client: CanineClient = CanineClient::new(
         &host,
@@ -196,6 +213,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             AuthAction::Logout => {
                 println!("auth logout");
+                handle_logout().await?;
                 // TODO: implement logout
             }
         },

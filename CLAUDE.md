@@ -16,26 +16,33 @@ cargo fmt                # Format code
 
 ## Architecture
 
-Canine CLI (`k9`) is a Rust command-line tool for interacting with the Canine platform (canine.sh). It allows users to manage projects and authentication.
+Canine CLI (`canine`/`k9`) is a Rust command-line tool for interacting with the Canine platform (canine.sh). It manages projects, clusters, authentication, and account switching.
 
 ### Key Files
 
-- `src/main.rs` - CLI entry point using clap for argument parsing. Defines command structure (`Namespace` → `AuthCmd`/`ProjectCmd` → actions) and handles `CanineConfig` for storing credentials in `~/.canine/canine.yaml`.
-- `src/client.rs` - HTTP client (`CanineClient`) for API communication using reqwest. Handles authentication via API key header (`X-API-KEY`) and defines error types (`CanineError`, `ApiError`).
+- `src/main.rs` - CLI entry point using clap for argument parsing. Defines command structure (`Namespace` → subcommands → actions) and handles `CanineConfig` for storing credentials in `~/.k9/canine.yaml`.
+- `src/client.rs` - HTTP client (`CanineClient`) for API communication using reqwest. Handles authentication via `X-API-KEY` header and account selection via `X-ACCOUNT-ID` header.
+- `src/kubeconfig.rs` - Kubernetes config schema and helpers. Parses/serializes kubeconfig YAML for cluster access. Also validates kubectl installation.
 
 ### CLI Structure
 
 ```
 k9
 ├── auth
-│   ├── login --token <TOKEN> [--host <HOST>]
+│   ├── login --token <TOKEN> [--host <HOST>] [--account <ACCOUNT>]
 │   ├── status
 │   └── logout
-└── project
-    ├── shell --name <NAME> [--container <CONTAINER>]
-    └── list [--all] [--json]
+├── account
+│   └── change-account <ACCOUNT>
+├── project
+│   ├── list [--all] [--json]
+│   ├── shell --project <PROJECT>
+│   ├── deploy --name <NAME> [--skip-build]
+│   └── processes --project <PROJECT>
+└── cluster
+    └── download-kubeconfig --name <NAME>
 ```
 
-### Authentication
+### Authentication & Config
 
-Credentials are stored in YAML format at `~/.canine/canine.yaml` with `host` and `token` fields. The default API host is `https://canine.sh`. Environment variable `CANINE_API_TOKEN` is also supported.
+Credentials stored at `~/.k9/canine.yaml` with `host`, `token`, and `account` fields. Kubeconfig saved to `~/.k9/kubeconfig.yaml`. Default API host: `https://canine.sh`.

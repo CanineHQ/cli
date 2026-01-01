@@ -27,7 +27,11 @@ pub struct Kubeconfig {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contexts: Vec<NamedContext>,
 
-    #[serde(rename = "current-context", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "current-context",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub current_context: Option<String>,
 
     /// Kubeconfig supports arbitrary extensions.
@@ -52,7 +56,11 @@ pub struct NamedCluster {
 pub struct Cluster {
     pub server: String,
 
-    #[serde(rename = "certificate-authority", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "certificate-authority",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub certificate_authority: Option<String>,
 
     #[serde(
@@ -62,7 +70,11 @@ pub struct Cluster {
     )]
     pub certificate_authority_data: Option<String>,
 
-    #[serde(rename = "insecure-skip-tls-verify", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "insecure-skip-tls-verify",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub insecure_skip_tls_verify: Option<bool>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -109,7 +121,11 @@ pub struct User {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 
-    #[serde(rename = "token-file", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "token-file",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub token_file: Option<String>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -118,7 +134,11 @@ pub struct User {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 
-    #[serde(rename = "client-certificate", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "client-certificate",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub client_certificate: Option<String>,
 
     #[serde(
@@ -128,26 +148,46 @@ pub struct User {
     )]
     pub client_certificate_data: Option<String>,
 
-    #[serde(rename = "client-key", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "client-key",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub client_key: Option<String>,
 
-    #[serde(rename = "client-key-data", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "client-key-data",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub client_key_data: Option<String>,
 
     // Dynamic auth mechanisms
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exec: Option<ExecConfig>,
 
-    #[serde(rename = "auth-provider", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "auth-provider",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub auth_provider: Option<AuthProvider>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub impersonate: Option<String>,
 
-    #[serde(rename = "impersonate-groups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "impersonate-groups",
+        default,
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub impersonate_groups: Vec<String>,
 
-    #[serde(rename = "impersonate-user-extra", default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(
+        rename = "impersonate-user-extra",
+        default,
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
     pub impersonate_user_extra: BTreeMap<String, Vec<String>>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -172,16 +212,28 @@ pub struct ExecConfig {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, String>,
 
-    #[serde(rename = "interactiveMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "interactiveMode",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub interactive_mode: Option<String>,
 
-    #[serde(rename = "provideClusterInfo", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provideClusterInfo",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub provide_cluster_info: Option<bool>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub install_hint: Option<String>,
 
-    #[serde(rename = "installHint", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "installHint",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub install_hint_alt: Option<String>,
 
     #[serde(flatten)]
@@ -256,9 +308,8 @@ users:
     }
 }
 
-
-use std::process::Command;
 use std::io;
+use std::process::Command;
 
 #[derive(Debug)]
 pub enum KubectlError {

@@ -13,13 +13,13 @@ pub enum Namespace {
     Auth(AuthCmd),
 
     /// Account commands
-    Account(AccountCmd),
+    Accounts(AccountCmd),
 
     /// Project commands
-    Project(ProjectCmd),
+    Projects(ProjectCmd),
 
     /// Cluster commands
-    Cluster(ClusterCmd),
+    Clusters(ClusterCmd),
 }
 
 // Auth commands
@@ -87,7 +87,7 @@ pub struct ProjectCmd {
 #[derive(Subcommand, Debug)]
 pub enum ProjectAction {
     /// List projects
-    List(ProjectList),
+    List,
 
     /// Open a shell into a project
     Shell(ProjectId),
@@ -114,19 +114,7 @@ pub struct DeployProjectParams {
     pub skip_build: bool,
 }
 
-#[derive(Args, Debug)]
-pub struct ProjectList {
-    /// Show all projects (including archived)
-    #[arg(long)]
-    pub all: bool,
-
-    /// Output as JSON
-    #[arg(long)]
-    pub json: bool,
-}
-
 // Cluster commands
-
 #[derive(Args, Debug)]
 pub struct ClusterCmd {
     #[command(subcommand)]
@@ -142,5 +130,5 @@ pub enum ClusterAction {
 #[derive(Args, Debug)]
 pub struct ClusterId {
     #[arg(long)]
-    pub name: String,
+    pub cluster: String,
 }

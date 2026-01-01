@@ -45,15 +45,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Using {} as backend", client.base_url);
 
             match other {
-                Namespace::Account(cmd) => match cmd.action {
+                Namespace::Accounts(cmd) => match cmd.action {
                     AccountAction::ChangeAccount(account_id) => {
                         commands::account::handle_change_account(&config, &client, &account_id)
                             .await?;
                     }
                 },
-                Namespace::Project(cmd) => match cmd.action {
-                    ProjectAction::List(list) => {
-                        commands::project::handle_list(&client, &list).await?;
+                Namespace::Projects(cmd) => match cmd.action {
+                    ProjectAction::List => {
+                        commands::project::handle_list(&client).await?;
                     }
                     ProjectAction::Processes(id) => {
                         commands::project::handle_processes(&client, &id).await?;
@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         commands::project::handle_deploy(&client, &params).await?;
                     }
                 },
-                Namespace::Cluster(cmd) => match cmd.action {
+                Namespace::Clusters(cmd) => match cmd.action {
                     ClusterAction::DownloadKubeconfig(id) => {
                         commands::cluster::handle_download_kubeconfig(&config, &client, &id)
                             .await?;

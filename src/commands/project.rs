@@ -6,15 +6,12 @@ use std::time::Duration;
 use colored::Colorize;
 use tabled::Table;
 
-use crate::cli::{DeployProjectParams, ProjectId, ProjectList};
+use crate::cli::{DeployProjectParams, ProjectId};
 use crate::client::{CanineClient, CanineError, Pod, ProcessStatus};
 use crate::config::CanineConfig;
 use crate::kubeconfig::{ensure_kubectl, kubeconfig_to_yaml};
 
-pub async fn handle_list(
-    client: &CanineClient,
-    _list: &ProjectList,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_list(client: &CanineClient) -> Result<(), Box<dyn std::error::Error>> {
     let projects = client.get_projects().await?.projects;
     println!("{}", Table::new(projects));
     Ok(())

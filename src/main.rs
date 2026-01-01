@@ -28,6 +28,8 @@ enum Namespace {
     /// Authentication commands
     Auth(AuthCmd),
 
+    Account(AccountCmd),
+
     /// Project commands
     Project(ProjectCmd),
 
@@ -47,6 +49,19 @@ struct AuthCmd {
     action: AuthAction,
 }
 
+#[derive(Args, Debug)]
+struct AccountCmd {
+    #[command(subcommand)]
+    action: AccountAction,
+}
+
+#[derive(Subcommand, Debug)]
+enum AccountAction {
+    /// Change account
+    ChangeAccount(AccountId),
+}
+
+
 #[derive(Subcommand, Debug)]
 enum AuthAction {
     /// Login to K9
@@ -60,6 +75,11 @@ enum AuthAction {
 }
 
 #[derive(Args, Debug)]
+struct AccountId {
+    pub account: String,
+}
+
+#[derive(Args, Debug)]
 struct AuthLogin {
     /// Optional auth provider (e.g. github)
     #[arg(long)]
@@ -67,6 +87,9 @@ struct AuthLogin {
 
     #[arg(long)]
     host: Option<String>,
+
+    #[arg(long)]
+    account: Option<String>,
 }
 
 #[derive(Args, Debug)]
@@ -80,7 +103,6 @@ struct ClusterCmd {
     #[command(subcommand)]
     action: ClusterAction,
 }
-
 
 #[derive(Subcommand, Debug)]
 enum ProjectAction {
@@ -124,7 +146,8 @@ struct ProjectList {
 #[derive(Debug, Serialize, Deserialize)]
 struct CanineConfig {
     host: Option<String>,
-    token: Option<String>
+    token: Option<String>,
+    account: Option<String>
 }
 
 impl CanineConfig {
@@ -133,6 +156,15 @@ impl CanineConfig {
         dirs::home_dir()
             .expect("Could not determine home directory")
             .join(".k9/kubeconfig.yaml")
+    }
+
+    pub fn change_account(&self, account: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let config = CanineConfig {
+            host: self.host.clone(),
+            token: self.token.clone(),
+            account: Some(account.to_string())
+        };
+        Ok(config.save()?)
     }
 
     pub fn config_path() -> PathBuf {
@@ -186,9 +218,21 @@ impl CanineConfig {
     }
 }
 
+async fn handle_change_account(
+    config: &CanineConfig,
+    client: &CanineClient,
+    account_id: &AccountId
+) -> Result<(), Box<dyn std::error::Error>> {
+    let response = client.me().await?;
+    if response.accounts.iter().any(|item| item.slug.contains(&account_id.account)) {
+        println!("Changing account to {}", account_id.account.green());
+        Ok(config.change_account(&account_id.account)?)
+    } else {
+        Err(Box::new(CanineError::NoAccount(format!("Account {} not found", account_id.account))))
+    }
+}
 async fn handle_login(login: AuthLogin) -> Result<(), Box<dyn std::error::Error>> {
     // Store the token in ~/.canine/canine.yaml
-    let mut config = CanineConfig::load();
     let host = match login.host {
         Some(h) => h,
         None => {
@@ -199,13 +243,16 @@ async fn handle_login(login: AuthLogin) -> Result<(), Box<dyn std::error::Error>
     let client: CanineClient = CanineClient::new(
         &host,
         Auth::ApiKey(login.token.clone()),
+        login.account,
     )?;
     match client.me().await {
         Ok(me) => {
             println!("Logged in as {}", me.email.green());
-            config.token = Some(login.token);
-            config.host = Some(host);
-            config.save()?;
+            CanineConfig {
+                host: Some(host),
+                token: Some(login.token),
+                account: Some(me.current_account.slug)
+            }.save()?;
             println!("Saved credentials to {}", CanineConfig::config_path().to_str().unwrap().green());
         },
         Err(CanineError::Api(api_err)) => {
@@ -233,10 +280,14 @@ async fn status(config: CanineConfig) -> Result<(), Box<dyn std::error::Error>> 
     let client: CanineClient = CanineClient::new(
         &host,
         Auth::ApiKey(token),
+        config.account.clone()
     )?;
 
     let response = client.me().await?;
     println!("Currently logged in as: {}", response.email.green());
+    println!("Current account: {}", response.current_account.slug.green());
+    println!("Available accounts:");
+    println!("{}", Table::new(response.accounts));
     Ok(())
 }
 
@@ -265,6 +316,7 @@ fn build_default_client(config: &CanineConfig) -> CanineClient {
     CanineClient::new(
         &config.host.clone().unwrap_or_else(|| CanineConfig::DEFAULT_HOST.to_string()),
         Auth::ApiKey(config.token.clone().expect("Client is not authenticated")),
+        config.account.clone()
     ).unwrap()
 }
 #[tokio::main]
@@ -292,6 +344,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let client = build_default_client(&config);
             println!("Using {} as backend", client.base_url);
             match other {
+                Namespace::Account(cmd) => match cmd.action {
+                    AccountAction::ChangeAccount(account_id) => {
+                        handle_change_account(&config, &client, &account_id).await?;
+                    }
+                },
                 Namespace::Project(cmd) => match cmd.action {
                     ProjectAction::List(list) => {
                         let projects = client.get_projects().await?.projects;

@@ -13,6 +13,7 @@ pub struct CanineClient {
     http: reqwest::Client,
     pub base_url: Url,
     auth: Auth,
+    account: Option<String>
 }
 
 #[derive(Clone, Debug)]
@@ -38,6 +39,8 @@ pub enum ApiError {
 }
 #[derive(Debug, Error)]
 pub enum CanineError {
+    #[error("No account")]
+    NoAccount(String),
     #[error("No token")]
     NoToken,
     #[error("No token")]
@@ -52,9 +55,19 @@ pub enum CanineError {
     Json(#[from] serde_json::Error),
 }
 
+#[derive(Debug, Serialize, Deserialize, Tabled)]
+pub struct Account {
+    pub id: i32,
+    pub slug: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MeResponse {
+pub struct User {
+    pub id: i32,
     pub email: String,
+    pub name: String,
+    pub current_account: Account,
+    pub accounts: Vec<Account>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Display)]
@@ -126,11 +139,12 @@ pub struct ClusterKubeconfigResponse {
 }
 
 impl CanineClient {
-    pub fn new(url: impl AsRef<str>, auth: Auth) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(url: impl AsRef<str>, auth: Auth, account: Option<String>) -> Result<Self, Box<dyn std::error::Error>> {
         Ok(Self {
             base_url: Url::parse(url.as_ref())?,
             auth,
-            http: reqwest::Client::new()
+            http: reqwest::Client::new(),
+            account
         })
     }
 
@@ -145,6 +159,10 @@ impl CanineClient {
             .map_err(|e| CanineError::UrlJoin(e.to_string()))?;
 
         let mut req = self.http.request(method, url);
+        if let Some(account) = &self.account {
+            req = req.header("X-ACCOUNT-ID", account);
+        }
+
         if let Auth::ApiKey(token) = &self.auth {
             req = req.header("X-API-KEY", token);
         }
@@ -217,7 +235,7 @@ impl CanineClient {
         ).await
     }
 
-    pub async fn me(&self) -> Result<MeResponse, CanineError> {
-        self.send_request::<MeResponse, ()>("/api/v1/me", reqwest::Method::GET, None).await
+    pub async fn me(&self) -> Result<User, CanineError> {
+        self.send_request::<User, ()>("/api/v1/me", reqwest::Method::GET, None).await
     }
 }

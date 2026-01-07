@@ -33,11 +33,13 @@ pub async fn handle_run(
 ) -> Result<(), Box<dyn std::error::Error>> {
     gate_kubectl();
 
+    println!("Fetching project {}...", params.project.green());
     let project = client.get_project(&params.project).await?;
 
+    println!("Downloading kubeconfig for cluster {}...", project.cluster_name.green());
     // Save kubeconfig
     let kubeconfig = client
-        .download_kubeconfig_file(&project.cluster_id.to_string())
+        .download_kubeconfig_file(&project.cluster_name.to_string())
         .await?;
     let yaml = kubeconfig_to_yaml(&kubeconfig.kubeconfig)?;
     config.save_kubeconfig(yaml)?;
@@ -110,12 +112,13 @@ async fn wait_pod_ready(
     project_id: &str,
     pod_id: &str,
 ) -> Result<Pod, CanineError> {
+    println!();
     let frames = ['|', '/', '-', '\\'];
     for i in 1..=30 {
         print!("\r{}", frames[i % frames.len()]);
         io::stdout().flush().unwrap();
 
-        sleep(Duration::from_secs(1));
+        sleep(Duration::from_millis(400));
         let pod = client.get_pod(project_id, pod_id).await?;
         if pod.status == ProcessStatus::Running {
             return Ok(pod);

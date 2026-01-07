@@ -6,7 +6,7 @@ use std::time::Duration;
 use colored::Colorize;
 use tabled::Table;
 
-use crate::cli::{DeployProjectParams, ProjectId};
+use crate::cli::{DeployProjectParams, ProjectId, ProjectRun};
 use crate::client::{CanineClient, CanineError, Pod, ProcessStatus};
 use crate::config::CanineConfig;
 use crate::kubeconfig::{ensure_kubectl, kubeconfig_to_yaml};
@@ -26,14 +26,14 @@ pub async fn handle_processes(
     Ok(())
 }
 
-pub async fn handle_shell(
+pub async fn handle_run(
     config: &CanineConfig,
     client: &CanineClient,
-    id: &ProjectId,
+    params: &ProjectRun,
 ) -> Result<(), Box<dyn std::error::Error>> {
     gate_kubectl();
 
-    let project = client.get_project(&id.project).await?;
+    let project = client.get_project(&params.project).await?;
 
     // Save kubeconfig
     let kubeconfig = client
@@ -47,23 +47,25 @@ pub async fn handle_shell(
         project.name.green()
     );
 
-    let pod = client.create_one_off_pod(&id.project).await?;
+    let pod = client.create_one_off_pod(&params.project).await?;
     println!("Created one off pod: {}", pod.name.green());
     print!("Waiting for pod to be ready...");
 
-    wait_pod_ready(client, &id.project, &pod.name).await?;
+    wait_pod_ready(client, &params.project, &pod.name).await?;
 
     println!();
+    let mut args = vec![
+        "exec".to_string(),
+        "-it".to_string(),
+        "-n".to_string(),
+        pod.namespace,
+        pod.name,
+        "--".to_string(),
+    ];
+    args.extend(params.command.clone());
+
     Command::new("kubectl")
-        .args([
-            "exec",
-            "-it",
-            "-n",
-            &pod.namespace,
-            &pod.name,
-            "--",
-            "/bin/sh",
-        ])
+        .args(&args)
         .env(
             "KUBECONFIG",
             CanineConfig::credential_path().to_str().unwrap(),
@@ -83,7 +85,12 @@ pub async fn handle_deploy(
     let result = client
         .deploy_project(&params.name, params.skip_build)
         .await?;
-    println!("Message: {}\tBuild ID: {}", result.message, result.build_id);
+    let url = format!(
+        "{}/projects/{}/deployments/{}",
+        client.base_url, params.name, result.build_id
+    );
+    println!("{}", result.message);
+    println!("View deployment: {}", url.blue());
     Ok(())
 }
 

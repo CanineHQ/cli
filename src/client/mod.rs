@@ -84,6 +84,29 @@ impl CanineClient {
             .await
     }
 
+    pub async fn get_clusters(&self) -> Result<ClustersResponse, CanineError> {
+        self.send_request::<ClustersResponse, ()>("/api/v1/clusters", reqwest::Method::GET, None)
+            .await
+    }
+
+    pub async fn get_builds(&self, project_id: &Option<String>) -> Result<BuildsResponse, CanineError> {
+        if let Some(project_id) = project_id {
+            self.send_request::<BuildsResponse, ()>(format!("/api/v1/builds?project_id={}", project_id).as_str(), reqwest::Method::GET, None)
+                .await
+        } else {
+            self.send_request::<BuildsResponse, ()>("/api/v1/builds", reqwest::Method::GET, None)
+                .await
+        }
+    }
+
+    pub async fn kill_build(&self, build_id: &str) -> Result<(), CanineError> {
+        Ok(self.send_request::<(), ()>(
+            format!("/api/v1/builds/{}/kill", build_id).as_str(),
+            reqwest::Method::PUT,
+            None
+        ).await?)
+    }
+
     pub async fn get_project(&self, project_id: &str) -> Result<Project, CanineError> {
         self.send_request::<Project, ()>(
             format!("/api/v1/projects/{}", project_id).as_str(),
@@ -143,5 +166,15 @@ impl CanineClient {
             None,
         )
         .await
+    }
+
+    pub async fn get_add_ons(&self) -> Result<AddOnsResponse, CanineError> {
+        self.send_request::<AddOnsResponse, ()>("/api/v1/add_ons", reqwest::Method::GET, None)
+            .await
+    }
+
+    pub async fn restart_add_on(&self, add_on_id: &str) -> Result<(), CanineError> {
+        self.send_request::<(), ()>(format!("/api/v1/add_ons/{}/restart", add_on_id).as_str(), reqwest::Method::PUT, None)
+            .await
     }
 }

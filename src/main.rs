@@ -6,7 +6,7 @@ mod kubeconfig;
 
 use clap::Parser;
 
-use cli::{AccountAction, AuthAction, Cli, ClusterAction, Namespace, ProjectAction};
+use cli::{AccountAction, AddOnAction, AuthAction, BuildAction, Cli, ClusterAction, Namespace, ProjectAction};
 use client::{Auth, CanineClient};
 use config::CanineConfig;
 
@@ -42,7 +42,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         other => {
             let client = build_default_client(&config);
-            println!("Using {} as backend", client.base_url);
+            println!(
+                "Using {} as backend, {}",
+                client.base_url,
+                config.account.as_deref().unwrap_or("Default")
+            );
 
             match other {
                 Namespace::Accounts(cmd) => match cmd.action {
@@ -58,19 +62,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ProjectAction::Processes(id) => {
                         commands::project::handle_processes(&client, &id).await?;
                     }
-                    ProjectAction::Shell(id) => {
-                        commands::project::handle_shell(&config, &client, &id).await?;
+                    ProjectAction::Run(params) => {
+                        commands::project::handle_run(&config, &client, &params).await?;
                     }
                     ProjectAction::Deploy(params) => {
                         commands::project::handle_deploy(&client, &params).await?;
                     }
                 },
+                Namespace::Builds(cmd) => match cmd.action {
+                    BuildAction::List(list) => {
+                        commands::build::handle_list(&client, &list.project).await?;
+                    }
+                    BuildAction::Kill(id) => {
+                        commands::build::handle_kill(&client, &id.build).await?;
+                    }
+                }
                 Namespace::Clusters(cmd) => match cmd.action {
+                    ClusterAction::List => {
+                        commands::cluster::handle_list(&client).await?;
+                    }
                     ClusterAction::DownloadKubeconfig(id) => {
                         commands::cluster::handle_download_kubeconfig(&config, &client, &id)
                             .await?;
                     }
                 },
+                Namespace::AddOns(cmd) => match cmd.action {
+                    AddOnAction::List => {
+                        commands::add_on::handle_list(&client).await?;
+                    }
+                    AddOnAction::Restart(id) => {
+                        commands::add_on::handle_restart(&client, &id).await?;
+                    }
+                }
                 Namespace::Auth(_) => unreachable!(),
             }
         }

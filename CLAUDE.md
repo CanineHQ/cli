@@ -36,12 +36,16 @@ k9
 │   └── change-account <ACCOUNT>
 ├── project
 │   ├── list [--all] [--json]
-│   ├── shell --project <PROJECT>
+│   ├── shell --project <PROJECT_NAME>
 │   ├── deploy --name <NAME> [--skip-build]
-│   └── processes --project <PROJECT>
+│   └── processes --project <PROJECT_NAME>
 └── cluster
-    └── download-kubeconfig --name <NAME>
+    └── download-kubeconfig --name <CLUSTER_NAME>
 ```
+
+### Resource Naming
+
+Commands accept resource names (not IDs) for projects, clusters, and add-ons. The CLI resolves names to IDs internally via API lookups.
 
 ### Authentication & Config
 

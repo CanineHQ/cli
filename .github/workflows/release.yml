@@ -57,6 +57,7 @@ jobs:
     outputs:
       sha256_intel: ${{ steps.checksums.outputs.sha256_intel }}
       sha256_arm: ${{ steps.checksums.outputs.sha256_arm }}
+      sha256_source: ${{ steps.checksums.outputs.sha256_source }}
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -74,6 +75,11 @@ jobs:
           sha256sum *.tar.gz > SHA256SUMS
           echo "sha256_intel=$(grep x86_64-apple-darwin SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           echo "sha256_arm=$(grep aarch64-apple-darwin SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+          # Download source tarball and compute SHA256 for Homebrew formula
+          VERSION="${GITHUB_REF_NAME}"
+          curl -sL "https://github.com/CanineHQ/cli/archive/refs/tags/${VERSION}.tar.gz" -o source.tar.gz
+          echo "sha256_source=$(sha256sum source.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -96,5 +102,6 @@ jobs:
             {
               "version": "${{ github.ref_name }}",
               "sha256_intel": "${{ needs.release.outputs.sha256_intel }}",
-              "sha256_arm": "${{ needs.release.outputs.sha256_arm }}"
+              "sha256_arm": "${{ needs.release.outputs.sha256_arm }}",
+              "sha256_source": "${{ needs.release.outputs.sha256_source }}"
             }

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "🔄 Fetching latest tags from origin..."
+git fetch --tags
+
+echo
+echo "📦 Existing versions:"
+git tag --sort=v:refname | sed 's/^/  - /'
+
+echo
+CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+echo "👉 Current version: $CURRENT_VERSION"
+
+echo
+read -rp "Enter new version (vX.Y.Z): " NEW_VERSION
+
+# Validate version format
+if [[ ! "$NEW_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "❌ Invalid version format. Use vX.Y.Z (e.g. v0.0.19)"
+  exit 1
+fi
+
+# Ensure tag does not already exist
+if git rev-parse "$NEW_VERSION" >/dev/null 2>&1; then
+  echo "❌ Tag $NEW_VERSION already exists."
+  exit 1
+fi
+
+# Ensure clean working tree
+if ! git diff-index --quiet HEAD --; then
+  echo "❌ Working tree is dirty. Commit or stash changes first."
+  exit 1
+fi
+
+echo
+read -rp "🚀 Release $NEW_VERSION? (y/N): " CONFIRM
+if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+  echo "Aborted."
+  exit 0
+fi
+
+echo "🏷️  Creating tag $NEW_VERSION"
+git t
+

@@ -100,11 +100,11 @@ impl CanineClient {
     }
 
     pub async fn kill_build(&self, build_id: &str) -> Result<(), CanineError> {
-        Ok(self.send_request::<(), ()>(
+        self.send_request::<(), ()>(
             format!("/api/v1/builds/{}/kill", build_id).as_str(),
             reqwest::Method::PUT,
             None
-        ).await?)
+        ).await
     }
 
     pub async fn get_project(&self, project_id: &str) -> Result<Project, CanineError> {

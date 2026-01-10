@@ -8,5 +8,5 @@ pub async fn handle_list(client: &CanineClient, project_id: &Option<String>) -> 
 }
 
 pub async fn handle_kill(client: &CanineClient, build_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    Ok(client.kill_build(&build_id).await?)
+    Ok(client.kill_build(build_id).await?)
 }

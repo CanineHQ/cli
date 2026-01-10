@@ -13,7 +13,7 @@ use config::CanineConfig;
 
 fn build_default_client(config: &CanineConfig) -> CanineClient {
     CanineClient::new(
-        &config
+        config
             .host
             .clone()
             .unwrap_or_else(|| CanineConfig::DEFAULT_HOST.to_string()),

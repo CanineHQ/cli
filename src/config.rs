@@ -38,28 +38,22 @@ impl CanineConfig {
             .write(true)
             .create(true)
             .read(true)
-            .open(&Self::config_path())
-            .expect(&format!(
-                "failed to open {}",
-                Self::config_path().to_str().unwrap()
-            ));
+            .open(Self::config_path())
+            .unwrap_or_else(|_| panic!("failed to open {}",
+                Self::config_path().to_str().unwrap()));
 
-        let contents = std::fs::read_to_string(&Self::config_path()).expect(&format!(
-            "failed to read {}",
-            Self::config_path().to_str().unwrap()
-        ));
+        let contents = std::fs::read_to_string(Self::config_path()).unwrap_or_else(|_| panic!("failed to read {}",
+            Self::config_path().to_str().unwrap()));
 
-        let config: CanineConfig = serde_yaml::from_str(&contents).expect(&format!(
-            "failed to parse {}",
-            Self::config_path().to_str().unwrap()
-        ));
+        let config: CanineConfig = serde_yaml::from_str(&contents).unwrap_or_else(|_| panic!("failed to parse {}",
+            Self::config_path().to_str().unwrap()));
 
         config
     }
 
     pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let yaml = serde_yaml::to_string(&self)?;
-        Ok(fs::write(&Self::config_path(), yaml)?)
+        Ok(fs::write(Self::config_path(), yaml)?)
     }
 
     pub fn clear() {
@@ -67,7 +61,7 @@ impl CanineConfig {
         fs::OpenOptions::new()
             .write(true)
             .truncate(true)
-            .open(&Self::config_path())
+            .open(Self::config_path())
             .unwrap();
     }
 
@@ -82,7 +76,7 @@ impl CanineConfig {
 
     pub fn save_kubeconfig(&self, yaml: String) -> Result<(), Box<dyn std::error::Error>> {
         Self::gate_directory(&Self::config_path());
-        fs::write(&Self::credential_path(), yaml)?;
+        fs::write(Self::credential_path(), yaml)?;
         println!(
             "{} Kubeconfig saved to {}",
             "✓".green(),

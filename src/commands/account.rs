@@ -16,8 +16,9 @@ pub async fn handle_change_account(
         .iter()
         .any(|item| item.slug.contains(&account_id.account))
     {
-        println!("Changing account to {}", account_id.account.green());
-        Ok(config.change_account(&account_id.account)?)
+        config.change_account(&account_id.account)?;
+        println!("{} Switched to account {}", "✓".green(), account_id.account.cyan());
+        Ok(())
     } else {
         Err(Box::new(CanineError::NoAccount(format!(
             "Account {} not found",

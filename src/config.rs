@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use colored::Colorize;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -83,8 +84,9 @@ impl CanineConfig {
         Self::gate_directory(&Self::config_path());
         fs::write(&Self::credential_path(), yaml)?;
         println!(
-            "Saved kubeconfig to {}",
-            Self::credential_path().to_str().unwrap()
+            "{} Kubeconfig saved to {}",
+            "✓".green(),
+            Self::credential_path().to_str().unwrap().cyan()
         );
         Ok(())
     }

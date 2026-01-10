@@ -174,6 +174,9 @@ pub enum ClusterAction {
     List,
     /// Download kubeconfig file
     DownloadKubeconfig(ClusterId),
+
+    // Connect to cluster via telepresence
+    Connect(ClusterId)
 }
 
 #[derive(Subcommand, Debug)]

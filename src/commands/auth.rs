@@ -9,7 +9,7 @@ pub async fn handle_login(login: AuthLogin) -> Result<(), Box<dyn std::error::Er
     let host = match login.host {
         Some(h) => h,
         None => {
-            println!("Defaulting host to {}", CanineConfig::DEFAULT_HOST);
+            println!("No host specified, using {}", CanineConfig::DEFAULT_HOST.cyan());
             CanineConfig::DEFAULT_HOST.to_string()
         }
     };
@@ -18,20 +18,20 @@ pub async fn handle_login(login: AuthLogin) -> Result<(), Box<dyn std::error::Er
 
     match client.me().await {
         Ok(me) => {
-            println!("Logged in as {}", me.email.green());
             CanineConfig {
                 host: Some(host),
                 token: Some(login.token),
                 account: Some(me.current_account.slug),
             }
             .save()?;
+            println!("{} Authenticated as {}", "✓".green(), me.email.green());
             println!(
-                "Saved credentials to {}",
-                CanineConfig::config_path().to_str().unwrap().green()
+                "  Credentials saved to {}",
+                CanineConfig::config_path().to_str().unwrap().dimmed()
             );
         }
         Err(CanineError::Api(api_err)) => {
-            println!("API Error: {}", api_err);
+            println!("{} Authentication failed: {}", "✗".red(), api_err);
         }
         Err(e) => return Err(Box::new(e)),
     };
@@ -41,7 +41,7 @@ pub async fn handle_login(login: AuthLogin) -> Result<(), Box<dyn std::error::Er
 
 pub async fn handle_logout() -> Result<(), Box<dyn std::error::Error>> {
     CanineConfig::clear();
-    println!("Logged out");
+    println!("{} Logged out successfully", "✓".green());
     Ok(())
 }
 
@@ -56,8 +56,8 @@ pub async fn handle_status(config: &CanineConfig) -> Result<(), Box<dyn std::err
     let client = CanineClient::new(&host, Auth::ApiKey(token), config.account.clone())?;
 
     let response = client.me().await?;
-    println!("Currently logged in as: {}", response.email.green());
-    println!("Current account: {}", response.current_account.slug.green());
+    println!("Logged in as {}  (account: {})", response.email.green(), response.current_account.slug.cyan());
+    println!();
     println!("Available accounts:");
     println!("{}", Table::new(response.accounts));
 

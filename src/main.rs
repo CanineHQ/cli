@@ -5,6 +5,7 @@ mod config;
 mod kubeconfig;
 
 use clap::Parser;
+use colored::Colorize;
 
 use cli::{AccountAction, AddOnAction, AuthAction, BuildAction, Cli, ClusterAction, Namespace, ProjectAction};
 use client::{Auth, CanineClient};
@@ -42,10 +43,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         other => {
             let client = build_default_client(&config);
-            println!(
-                "Using {} as backend, {}",
-                client.base_url,
-                config.account.as_deref().unwrap_or("Default")
+            eprintln!(
+                "{} {}  {} {}",
+                "Host:".dimmed(),
+                client.base_url.as_str().cyan(),
+                "Account:".dimmed(),
+                config.account.as_deref().unwrap_or("default").cyan()
             );
 
             match other {
@@ -80,6 +83,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Namespace::Clusters(cmd) => match cmd.action {
                     ClusterAction::List => {
                         commands::cluster::handle_list(&client).await?;
+                    }
+                    ClusterAction::Connect(id) => {
+                        commands::cluster::handle_connect(&config, &client, &id).await?;
                     }
                     ClusterAction::DownloadKubeconfig(id) => {
                         commands::cluster::handle_download_kubeconfig(&config, &client, &id)

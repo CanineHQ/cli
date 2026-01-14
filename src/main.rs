@@ -7,7 +7,7 @@ mod kubeconfig;
 use clap::Parser;
 use colored::Colorize;
 
-use cli::{AccountAction, AddOnAction, AuthAction, BuildAction, Cli, ClusterAction, Namespace, ProjectAction};
+use cli::{AccountAction, AddOnAction, AuthAction, BuildAction, Cli, ClusterAction, LocalAction, Namespace, ProjectAction};
 use client::{Auth, CanineClient};
 use config::CanineConfig;
 
@@ -38,6 +38,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             AuthAction::Logout => {
                 commands::auth::handle_logout().await?;
+            }
+        },
+
+        Namespace::Local(cmd) => match cmd.action {
+            LocalAction::Start => {
+                commands::local::handle_start().await?;
+            }
+            LocalAction::Status => {
+                commands::local::handle_status().await?;
+            }
+            LocalAction::Stop => {
+                commands::local::handle_stop().await?;
+            }
+            LocalAction::Upgrade => {
+                commands::local::handle_upgrade().await?;
             }
         },
 
@@ -100,7 +115,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         commands::add_on::handle_restart(&client, &id).await?;
                     }
                 }
-                Namespace::Auth(_) => unreachable!(),
+                Namespace::Auth(_) | Namespace::Local(_) => unreachable!(),
             }
         }
     }

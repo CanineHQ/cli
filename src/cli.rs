@@ -26,6 +26,9 @@ pub enum Namespace {
 
     // Add on commands
     AddOns(AddOnCmd),
+
+    /// Local environment commands
+    Local(LocalCmd),
 }
 
 // Build commands
@@ -197,4 +200,26 @@ pub struct ClusterId {
 pub struct AddOnId {
     #[arg(long)]
     pub add_on: String,
+}
+
+// Local commands
+#[derive(Args, Debug)]
+pub struct LocalCmd {
+    #[command(subcommand)]
+    pub action: LocalAction,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum LocalAction {
+    /// Start local Canine environment
+    Start,
+
+    /// Show status of local Canine environment
+    Status,
+
+    /// Stop local Canine environment
+    Stop,
+
+    /// Upgrade local Canine environment
+    Upgrade,
 }

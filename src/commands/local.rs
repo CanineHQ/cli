@@ -69,7 +69,7 @@ async fn download_docker_compose() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub async fn handle_start() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_start(port: u16) -> Result<(), Box<dyn std::error::Error>> {
     if check_docker_compose().is_err() {
         println!(
             "{} Docker Compose not found. Install Docker Desktop: {}",
@@ -86,11 +86,13 @@ pub async fn handle_start() -> Result<(), Box<dyn std::error::Error>> {
 
     let status = Command::new("docker")
         .args(["compose", "up", "-d"])
+        .env("PORT", port.to_string())
         .current_dir(local_dir())
         .status()?;
 
     if status.success() {
         println!("{} Local Canine environment started", "✓".green());
+        println!("\n  Open {} in your browser", format!("http://localhost:{}", port).cyan());
     } else {
         println!("{} Failed to start local Canine environment", "✗".red());
         std::process::exit(1);
@@ -106,11 +108,80 @@ pub async fn handle_status() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    Command::new("docker")
-        .args(["compose", "ps"])
+    // Get structured JSON output from docker compose
+    let output = Command::new("docker")
+        .args(["compose", "ps", "--format", "json"])
         .current_dir(local_dir())
-        .status()?;
+        .output()?;
 
+    if !output.status.success() {
+        println!("{} Failed to get container status", "✗".red());
+        std::process::exit(1);
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Parse each line as a JSON object (docker outputs one JSON object per line)
+    let services: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter_map(|line| serde_json::from_str(line).ok())
+        .collect();
+
+    if services.is_empty() {
+        println!("{} No services running", "✗".yellow());
+        println!("  Run {} to start", "canine local start".cyan());
+        return Ok(());
+    }
+
+    println!("\n{}", "Local Canine Services".bold());
+    println!("{}", "─".repeat(50));
+
+    for svc in &services {
+        let name = svc["Service"].as_str().unwrap_or("unknown");
+        let state = svc["State"].as_str().unwrap_or("unknown");
+        let health = svc["Health"].as_str().unwrap_or("");
+        let ports = svc["Publishers"].as_array();
+
+        let status_icon = match state {
+            "running" => "✓".green(),
+            "exited" => "✗".red(),
+            _ => "?".yellow(),
+        };
+
+        let health_str = if !health.is_empty() {
+            format!(" ({})", health)
+        } else {
+            String::new()
+        };
+
+        // Extract published ports
+        let port_str = ports
+            .map(|p| {
+                p.iter()
+                    .filter_map(|pub_info| {
+                        let published = pub_info["PublishedPort"].as_u64()?;
+                        if published > 0 {
+                            Some(format!(":{}", published))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
+            .unwrap_or_default();
+
+        println!(
+            "{} {:<20} {:<10}{}  {}",
+            status_icon,
+            name,
+            state,
+            health_str,
+            port_str.cyan()
+        );
+    }
+
+    println!();
     Ok(())
 }
 

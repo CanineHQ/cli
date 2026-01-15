@@ -42,8 +42,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
 
         Namespace::Local(cmd) => match cmd.action {
-            LocalAction::Start => {
-                commands::local::handle_start().await?;
+            LocalAction::Start { port } => {
+                commands::local::handle_start(port).await?;
             }
             LocalAction::Status => {
                 commands::local::handle_status().await?;

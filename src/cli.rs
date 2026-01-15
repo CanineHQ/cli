@@ -1,7 +1,7 @@
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "k9", version, about = "K9 CLI")]
+#[command(name = "k9", version, about = "Canine CLI - Manage your Canine projects, clusters, and local development environment")]
 pub struct Cli {
     #[command(subcommand)]
     pub namespace: Namespace,
@@ -9,25 +9,25 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Namespace {
-    /// Authentication commands
+    /// Manage authentication (login, logout, status)
     Auth(AuthCmd),
 
-    /// Account commands
+    /// Switch between Canine accounts
     Accounts(AccountCmd),
 
-    /// Project commands
+    /// Manage projects (list, deploy, run commands)
     Projects(ProjectCmd),
 
-    /// Cluster commands
+    /// Manage Kubernetes clusters (list, download kubeconfig, connect)
     Clusters(ClusterCmd),
 
-    // Build commands
+    /// Manage project builds (list, kill)
     Builds(BuildCmd),
 
-    // Add on commands
+    /// Manage add-ons (list, restart)
     AddOns(AddOnCmd),
 
-    /// Local environment commands
+    /// Run Canine locally with Docker Compose
     Local(LocalCmd),
 }
 
@@ -212,7 +212,11 @@ pub struct LocalCmd {
 #[derive(Subcommand, Debug)]
 pub enum LocalAction {
     /// Start local Canine environment
-    Start,
+    Start {
+        /// Port to run the local environment on
+        #[arg(long, short, default_value = "3000")]
+        port: u16,
+    },
 
     /// Show status of local Canine environment
     Status,

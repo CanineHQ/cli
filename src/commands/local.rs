@@ -4,7 +4,7 @@ use std::io;
 use std::path::PathBuf;
 use std::process::Command;
 
-const DOCKER_COMPOSE_URL: &str = "https://raw.githubusercontent.com/CanineHQ/canine/refs/heads/main/install/portainer/docker-compose.yml";
+const DOCKER_COMPOSE_URL: &str = "https://raw.githubusercontent.com/CanineHQ/canine/refs/heads/main/docker-compose.yml";
 
 pub enum DockerComposeError {
     NotFound,
@@ -179,6 +179,24 @@ pub async fn handle_status() -> Result<(), Box<dyn std::error::Error>> {
             health_str,
             port_str.cyan()
         );
+    }
+
+    // Find the main web port (first published port, typically 3000)
+    let web_port = services.iter().find_map(|svc| {
+        svc["Publishers"].as_array().and_then(|publishers| {
+            publishers.iter().find_map(|pub_info| {
+                let published = pub_info["PublishedPort"].as_u64()?;
+                if published > 0 {
+                    Some(published)
+                } else {
+                    None
+                }
+            })
+        })
+    });
+
+    if let Some(port) = web_port {
+        println!("\n  Open {} in your browser", format!("http://localhost:{}", port).cyan());
     }
 
     println!();

@@ -227,6 +227,26 @@ pub async fn handle_stop() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub async fn handle_upgrade() -> Result<(), Box<dyn std::error::Error>> {
-    println!("{} Upgrading local Canine environment...", "→".cyan());
+    if !docker_compose_path().exists() {
+        println!("{} Local Canine environment is not installed", "✗".red());
+        println!("  Run {} to install", "canine local start".cyan());
+        std::process::exit(1);
+    }
+
+    println!("{} Pulling latest images...", "→".cyan());
+
+    let status = Command::new("docker")
+        .args(["compose", "pull"])
+        .current_dir(local_dir())
+        .status()?;
+
+    if status.success() {
+        println!("{} Images updated successfully", "✓".green());
+        println!("  Run {} to apply the upgrade", "canine local start".cyan());
+    } else {
+        println!("{} Failed to pull images", "✗".red());
+        std::process::exit(1);
+    }
+
     Ok(())
 }

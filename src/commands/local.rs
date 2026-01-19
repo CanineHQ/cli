@@ -181,8 +181,12 @@ pub async fn handle_status() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    // Find the main web port (first published port, typically 3000)
+    // Find the main web port from the "web" service
     let web_port = services.iter().find_map(|svc| {
+        let name = svc["Service"].as_str().unwrap_or("");
+        if name != "web" {
+            return None;
+        }
         svc["Publishers"].as_array().and_then(|publishers| {
             publishers.iter().find_map(|pub_info| {
                 let published = pub_info["PublishedPort"].as_u64()?;

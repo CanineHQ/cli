@@ -1,7 +1,7 @@
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "k9", version, about = "Canine CLI - Manage your Canine projects, clusters, and local development environment")]
+#[command(name = "canine", version, about = "Canine CLI - Manage your Canine projects, clusters, and local development environment")]
 pub struct Cli {
     #[command(subcommand)]
     pub namespace: Namespace,

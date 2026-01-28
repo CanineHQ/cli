@@ -1,4 +1,5 @@
 use colored::Colorize;
+use rand::Rng;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -20,6 +21,52 @@ pub fn local_dir() -> PathBuf {
 
 pub fn docker_compose_path() -> PathBuf {
     local_dir().join("docker-compose.yml")
+}
+
+pub fn env_file_path() -> PathBuf {
+    local_dir().join(".env")
+}
+
+fn generate_secret_key() -> String {
+    let mut bytes = [0u8; 64];
+    rand::thread_rng().fill(&mut bytes);
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+fn ensure_secret_key_base() -> Result<(), Box<dyn std::error::Error>> {
+    let env_path = env_file_path();
+
+    // Check if .env exists and contains SECRET_KEY_BASE
+    if env_path.exists() {
+        let content = fs::read_to_string(&env_path)?;
+        if content.lines().any(|line| line.starts_with("SECRET_KEY_BASE=")) {
+            println!("{} Using existing SECRET_KEY_BASE", "✓".green());
+            return Ok(());
+        }
+    }
+
+    println!("{} Generating SECRET_KEY_BASE...", "→".cyan());
+    let secret = generate_secret_key();
+
+    // Ensure directory exists
+    fs::create_dir_all(local_dir())?;
+
+    // Append to .env file
+    let mut env_content = if env_path.exists() {
+        fs::read_to_string(&env_path)?
+    } else {
+        String::new()
+    };
+
+    if !env_content.is_empty() && !env_content.ends_with('\n') {
+        env_content.push('\n');
+    }
+    env_content.push_str(&format!("SECRET_KEY_BASE={}\n", secret));
+
+    fs::write(&env_path, env_content)?;
+    println!("{} Generated SECRET_KEY_BASE", "✓".green());
+
+    Ok(())
 }
 
 pub fn check_docker_compose() -> Result<(), DockerComposeError> {
@@ -81,6 +128,8 @@ pub async fn handle_start(port: u16) -> Result<(), Box<dyn std::error::Error>> {
     println!("{} Docker Compose found", "✓".green());
 
     download_docker_compose().await?;
+
+    ensure_secret_key_base()?;
 
     println!("{} Starting local Canine environment...", "→".cyan());
 

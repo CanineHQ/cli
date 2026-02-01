@@ -6,7 +6,7 @@ use std::time::Duration;
 use colored::Colorize;
 use tabled::Table;
 
-use crate::cli::{DeployProjectParams, ProjectId, ProjectRun};
+use crate::cli::{DeployProjectParams, ProjectId, ProjectLogs, ProjectRun};
 use crate::client::{CanineClient, CanineError, Pod, ProcessStatus};
 use crate::config::CanineConfig;
 use crate::kubeconfig::{ensure_kubectl, kubeconfig_to_yaml};
@@ -73,6 +73,58 @@ pub async fn handle_run(
             CanineConfig::credential_path().to_str().unwrap(),
         )
         .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status()?;
+
+    Ok(())
+}
+
+pub async fn handle_logs(
+    config: &CanineConfig,
+    client: &CanineClient,
+    params: &ProjectLogs,
+) -> Result<(), Box<dyn std::error::Error>> {
+    gate_kubectl();
+
+    print!("Fetching project {}... ", params.project.cyan());
+    io::stdout().flush().unwrap();
+    let project = client.get_project(&params.project).await?;
+    println!("{}", "done".green());
+
+    print!(
+        "Downloading kubeconfig for cluster {}... ",
+        project.cluster_name.cyan()
+    );
+    io::stdout().flush().unwrap();
+    let kubeconfig = client
+        .download_kubeconfig_file(&project.cluster_name.to_string())
+        .await?;
+    let yaml = kubeconfig_to_yaml(&kubeconfig.kubeconfig)?;
+    config.save_kubeconfig(yaml)?;
+    println!("{}", "done".green());
+
+    print!("Finding process {}... ", params.process.cyan());
+    io::stdout().flush().unwrap();
+    let processes = client.get_processes(&params.project).await?;
+    let pod = processes
+        .pods
+        .iter()
+        .find(|p| p.name.contains(&params.process))
+        .ok_or_else(|| format!("Process '{}' not found", params.process))?;
+    println!("{}", "done".green());
+
+    let mut args = vec!["logs", "-n", &pod.namespace, &pod.name];
+    if params.tail {
+        args.push("-f");
+    }
+
+    Command::new("kubectl")
+        .args(&args)
+        .env(
+            "KUBECONFIG",
+            CanineConfig::credential_path().to_str().unwrap(),
+        )
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()?;

@@ -131,6 +131,9 @@ pub enum ProjectAction {
 
     /// List processes for a project
     Processes(ProjectId),
+
+    /// Get logs for a process
+    Logs(ProjectLogs),
 }
 
 #[derive(Args, Debug)]
@@ -147,6 +150,19 @@ pub struct ProjectRun {
     /// Command to run (e.g., "bundle exec rails c")
     #[arg(trailing_var_arg = true, required = true)]
     pub command: Vec<String>,
+}
+
+#[derive(Args, Debug)]
+pub struct ProjectLogs {
+    #[arg(long)]
+    pub project: String,
+
+    #[arg(long)]
+    pub process: String,
+
+    /// Follow log output
+    #[arg(long, default_value_t = false)]
+    pub tail: bool,
 }
 
 #[derive(Args, Debug)]

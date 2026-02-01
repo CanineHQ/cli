@@ -86,6 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ProjectAction::Deploy(params) => {
                         commands::project::handle_deploy(&client, &params).await?;
                     }
+                    ProjectAction::Logs(params) => {
+                        commands::project::handle_logs(&config, &client, &params).await?;
+                    }
                 },
                 Namespace::Builds(cmd) => match cmd.action {
                     BuildAction::List(list) => {

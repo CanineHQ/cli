@@ -5,6 +5,19 @@ A command-line tool for interacting with the [Canine](https://canine.sh) platfor
 ## Installation
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/CanineHQ/cli/main/install.sh | sh
+```
+
+### macOS (Homebrew)
+
+```bash
+brew tap CanineHQ/canine
+brew install canine
+```
+
+### From source
+
+```bash
 cargo install --path .
 ```
 

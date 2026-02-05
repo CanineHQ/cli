@@ -98,16 +98,19 @@ pub enum AccountAction {
 
 #[derive(Args, Debug)]
 pub struct AccountId {
+    /// Account slug to switch to
     pub account: String,
 }
 
 #[derive(Args, Debug)]
 pub struct BuildList {
+    /// Project name to filter builds (optional)
     pub project: Option<String>,
 }
 
 #[derive(Args, Debug)]
 pub struct BuildId {
+    /// Build ID to operate on
     pub build: String,
 }
 
@@ -138,12 +141,14 @@ pub enum ProjectAction {
 
 #[derive(Args, Debug)]
 pub struct ProjectId {
+    /// Project name
     #[arg(long)]
     pub project: String,
 }
 
 #[derive(Args, Debug)]
 pub struct ProjectRun {
+    /// Project name
     #[arg(long)]
     pub project: String,
 
@@ -154,9 +159,11 @@ pub struct ProjectRun {
 
 #[derive(Args, Debug)]
 pub struct ProjectLogs {
+    /// Project name
     #[arg(long)]
     pub project: String,
 
+    /// Process name to get logs from
     #[arg(long)]
     pub process: String,
 
@@ -167,9 +174,11 @@ pub struct ProjectLogs {
 
 #[derive(Args, Debug)]
 pub struct DeployProjectParams {
+    /// Project name to deploy
     #[arg(long)]
     pub name: String,
 
+    /// Skip the build step and deploy existing image
     #[arg(long, default_value_t = false)]
     pub skip_build: bool,
 }
@@ -194,26 +203,28 @@ pub enum ClusterAction {
     /// Download kubeconfig file
     DownloadKubeconfig(ClusterId),
 
-    // Connect to cluster via telepresence
+    /// Connect to cluster via telepresence
     Connect(ClusterId)
 }
 
 #[derive(Subcommand, Debug)]
 pub enum AddOnAction {
-    /// List add ons
+    /// List add-ons
     List,
-    /// Download kubeconfig file
+    /// Restart an add-on
     Restart(AddOnId),
 }
 
 #[derive(Args, Debug)]
 pub struct ClusterId {
+    /// Cluster name
     #[arg(long)]
     pub cluster: String,
 }
 
 #[derive(Args, Debug)]
 pub struct AddOnId {
+    /// Add-on name
     #[arg(long)]
     pub add_on: String,
 }

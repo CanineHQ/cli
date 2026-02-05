@@ -12,13 +12,17 @@ use client::{Auth, CanineClient};
 use config::CanineConfig;
 
 fn build_default_client(config: &CanineConfig) -> CanineClient {
+    let account = std::env::var("CANINE_ACCOUNT")
+        .ok()
+        .or_else(|| config.account.clone());
+
     CanineClient::new(
         config
             .host
             .clone()
             .unwrap_or_else(|| CanineConfig::DEFAULT_HOST.to_string()),
         Auth::ApiKey(config.token.clone().expect("Client is not authenticated")),
-        config.account.clone(),
+        account,
     )
     .unwrap()
 }

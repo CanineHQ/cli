@@ -74,7 +74,7 @@ pub struct AuthLogin {
     #[arg(long)]
     pub token: String,
 
-    /// Custom API host
+    /// Custom API host [default: https://canine.sh]
     #[arg(long)]
     pub host: Option<String>,
 

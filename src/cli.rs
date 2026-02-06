@@ -163,9 +163,9 @@ pub struct ProjectLogs {
     #[arg(long)]
     pub project: String,
 
-    /// Process name to get logs from
+    /// Process name to get logs from (interactive selection if omitted)
     #[arg(long)]
-    pub process: String,
+    pub process: Option<String>,
 
     /// Follow log output
     #[arg(long, default_value_t = false)]

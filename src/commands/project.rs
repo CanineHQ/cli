@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{self, BufRead, Write};
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
@@ -104,15 +104,35 @@ pub async fn handle_logs(
     config.save_kubeconfig(yaml)?;
     println!("{}", "done".green());
 
-    print!("Finding process {}... ", params.process.cyan());
-    io::stdout().flush().unwrap();
     let processes = client.get_processes(&params.project).await?;
-    let pod = processes
-        .pods
-        .iter()
-        .find(|p| p.name.contains(&params.process))
-        .ok_or_else(|| format!("Process '{}' not found", params.process))?;
-    println!("{}", "done".green());
+    let pod = if let Some(ref process_name) = params.process {
+        print!("Finding process {}... ", process_name.cyan());
+        io::stdout().flush().unwrap();
+        let found = processes
+            .pods
+            .iter()
+            .find(|p| p.name.contains(process_name))
+            .ok_or_else(|| format!("Process '{}' not found", process_name))?;
+        println!("{}", "done".green());
+        found
+    } else {
+        if processes.pods.is_empty() {
+            return Err("No processes found for this project".into());
+        }
+        println!("\nSelect a process:");
+        for (i, p) in processes.pods.iter().enumerate() {
+            println!("  [{}] {} ({})", (i + 1).to_string().cyan(), p.name, format!("{:?}", p.status).dimmed());
+        }
+        print!("\n{} ", "Enter number:".bold());
+        io::stdout().flush().unwrap();
+        let mut input = String::new();
+        io::stdin().lock().read_line(&mut input)?;
+        let choice: usize = input.trim().parse().map_err(|_| "Invalid selection")?;
+        if choice < 1 || choice > processes.pods.len() {
+            return Err(format!("Selection out of range (1-{})", processes.pods.len()).into());
+        }
+        &processes.pods[choice - 1]
+    };
 
     let mut args = vec!["logs", "-n", &pod.namespace, &pod.name];
     if params.tail {

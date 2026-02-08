@@ -7,9 +7,28 @@ use colored::Colorize;
 use tabled::Table;
 
 use crate::cli::{DeployProjectParams, ProjectId, ProjectLogs, ProjectRun};
-use crate::client::{CanineClient, CanineError, Pod, ProcessStatus};
+use crate::client::{CanineClient, CanineError, Pod, ProcessStatus, Project};
 use crate::config::CanineConfig;
 use crate::kubeconfig::{ensure_kubectl, kubeconfig_to_yaml};
+
+fn select_project(projects: &[Project]) -> Result<String, Box<dyn std::error::Error>> {
+    if projects.is_empty() {
+        return Err("No projects found".into());
+    }
+    println!("\nSelect a project:");
+    for (i, p) in projects.iter().enumerate() {
+        println!("  [{}] {} ({})", (i + 1).to_string().cyan(), p.name, format!("{}", p.status).dimmed());
+    }
+    print!("\n{} ", "Enter number:".bold());
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().lock().read_line(&mut input)?;
+    let choice: usize = input.trim().parse().map_err(|_| "Invalid selection")?;
+    if choice < 1 || choice > projects.len() {
+        return Err(format!("Selection out of range (1-{})", projects.len()).into());
+    }
+    Ok(projects[choice - 1].name.clone())
+}
 
 pub async fn handle_list(client: &CanineClient) -> Result<(), Box<dyn std::error::Error>> {
     let projects = client.get_projects().await?.projects;
@@ -33,9 +52,16 @@ pub async fn handle_run(
 ) -> Result<(), Box<dyn std::error::Error>> {
     gate_kubectl();
 
-    print!("Fetching project {}... ", params.project.cyan());
+    let project_name = if let Some(ref name) = params.project {
+        name.clone()
+    } else {
+        let projects = client.get_projects().await?.projects;
+        select_project(&projects)?
+    };
+
+    print!("Fetching project {}... ", project_name.cyan());
     io::stdout().flush().unwrap();
-    let project = client.get_project(&params.project).await?;
+    let project = client.get_project(&project_name).await?;
     println!("{}", "done".green());
 
     print!("Downloading kubeconfig for cluster {}... ", project.cluster_name.cyan());
@@ -50,11 +76,11 @@ pub async fn handle_run(
     print!("Starting one-off container in {}... ", project.name.cyan());
     io::stdout().flush().unwrap();
 
-    let pod = client.create_one_off_pod(&params.project).await?;
+    let pod = client.create_one_off_pod(&project_name).await?;
     println!("{}", "done".green());
     println!("  Pod: {}", pod.name.dimmed());
 
-    wait_pod_ready(client, &params.project, &pod.name).await?;
+    wait_pod_ready(client, &project_name, &pod.name).await?;
 
     let mut args = vec![
         "exec".to_string(),

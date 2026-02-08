@@ -148,9 +148,9 @@ pub struct ProjectId {
 
 #[derive(Args, Debug)]
 pub struct ProjectRun {
-    /// Project name
+    /// Project name (interactive selection if omitted)
     #[arg(long)]
-    pub project: String,
+    pub project: Option<String>,
 
     /// Command to run (e.g., "bundle exec rails c")
     #[arg(trailing_var_arg = true, required = true)]

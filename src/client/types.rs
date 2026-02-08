@@ -15,7 +15,7 @@ pub struct Account {
 pub struct User {
     pub id: i32,
     pub email: String,
-    pub name: String,
+    pub name: Option<String>,
     pub current_account: Account,
     pub accounts: Vec<Account>,
 }

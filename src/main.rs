@@ -11,20 +11,23 @@ use cli::{AccountAction, AddOnAction, AuthAction, BuildAction, Cli, ClusterActio
 use client::{Auth, CanineClient};
 use config::CanineConfig;
 
-fn build_default_client(config: &CanineConfig) -> CanineClient {
+fn build_default_client(config: &CanineConfig) -> Result<CanineClient, Box<dyn std::error::Error>> {
+    let token = config.token.clone().ok_or(
+        "Not authenticated. Run `canine auth login` to get started.\n\n  Examples:\n    canine auth login --token <TOKEN>\n    canine auth login --token <TOKEN> --host http://localhost:3456"
+    )?;
+
     let account = std::env::var("CANINE_ACCOUNT")
         .ok()
         .or_else(|| config.account.clone());
 
-    CanineClient::new(
+    Ok(CanineClient::new(
         config
             .host
             .clone()
             .unwrap_or_else(|| CanineConfig::DEFAULT_HOST.to_string()),
-        Auth::ApiKey(config.token.clone().expect("Client is not authenticated")),
+        Auth::ApiKey(token),
         account,
-    )
-    .unwrap()
+    )?)
 }
 
 #[tokio::main]
@@ -61,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
 
         other => {
-            let client = build_default_client(&config);
+            let client = build_default_client(&config)?;
             eprintln!(
                 "{} {}  {} {}",
                 "Host:".dimmed(),

@@ -46,7 +46,9 @@ pub async fn handle_logout() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub async fn handle_status(config: &CanineConfig) -> Result<(), Box<dyn std::error::Error>> {
-    let token = config.token.clone().ok_or_else(|| CanineError::NoToken)?;
+    let token = config.token.clone().ok_or(
+        "Not authenticated. Run `canine auth login` to get started.\n\n  Examples:\n    canine auth login --token <TOKEN>\n    canine auth login --token <TOKEN> --host http://localhost:3456"
+    )?;
 
     let host = config
         .host

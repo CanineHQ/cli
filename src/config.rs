@@ -45,8 +45,11 @@ impl CanineConfig {
         let contents = std::fs::read_to_string(Self::config_path()).unwrap_or_else(|_| panic!("failed to read {}",
             Self::config_path().to_str().unwrap()));
 
-        let config: CanineConfig = serde_yaml::from_str(&contents).unwrap_or_else(|_| panic!("failed to parse {}",
-            Self::config_path().to_str().unwrap()));
+        let config: CanineConfig = serde_yaml::from_str(&contents).unwrap_or(CanineConfig {
+            host: None,
+            token: None,
+            account: None,
+        });
 
         config
     }

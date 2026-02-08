@@ -98,8 +98,8 @@ pub enum AccountAction {
 
 #[derive(Args, Debug)]
 pub struct AccountId {
-    /// Account slug to switch to
-    pub account: String,
+    /// Account slug to switch to (interactive selection if omitted)
+    pub account: Option<String>,
 }
 
 #[derive(Args, Debug)]
@@ -217,9 +217,9 @@ pub enum AddOnAction {
 
 #[derive(Args, Debug)]
 pub struct ClusterId {
-    /// Cluster name
+    /// Cluster name (interactive selection if omitted)
     #[arg(long)]
-    pub cluster: String,
+    pub cluster: Option<String>,
 }
 
 #[derive(Args, Debug)]

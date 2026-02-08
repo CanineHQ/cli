@@ -1,6 +1,6 @@
 use tabled::Table;
 use colored::Colorize;
-use std::io;
+use std::io::{self, BufRead, Write};
 use std::process::Command;
 use crate::cli::ClusterId;
 use crate::client::CanineClient;
@@ -41,12 +41,41 @@ pub async fn handle_list(client: &CanineClient) -> Result<(), Box<dyn std::error
     Ok(())
 }
 
+fn select_cluster_name(clusters: &[crate::client::Cluster]) -> Result<String, Box<dyn std::error::Error>> {
+    if clusters.is_empty() {
+        return Err("No clusters found".into());
+    }
+    println!("\nSelect a cluster:");
+    for (i, c) in clusters.iter().enumerate() {
+        println!("  [{}] {} ({})", (i + 1).to_string().cyan(), c.name, format!("{}", c.status).dimmed());
+    }
+    print!("\n{} ", "Enter number:".bold());
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().lock().read_line(&mut input)?;
+    let choice: usize = input.trim().parse().map_err(|_| "Invalid selection")?;
+    if choice < 1 || choice > clusters.len() {
+        return Err(format!("Selection out of range (1-{})", clusters.len()).into());
+    }
+    Ok(clusters[choice - 1].name.clone())
+}
+
+async fn resolve_cluster_name(client: &CanineClient, id: &ClusterId) -> Result<String, Box<dyn std::error::Error>> {
+    if let Some(ref name) = id.cluster {
+        Ok(name.clone())
+    } else {
+        let clusters = client.get_clusters().await?.clusters;
+        select_cluster_name(&clusters)
+    }
+}
+
 pub async fn handle_download_kubeconfig(
     config: &CanineConfig,
     client: &CanineClient,
     id: &ClusterId,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let kubeconfig = client.download_kubeconfig_file(&id.cluster).await?;
+    let cluster_name = resolve_cluster_name(client, id).await?;
+    let kubeconfig = client.download_kubeconfig_file(&cluster_name).await?;
     let yaml = kubeconfig_to_yaml(&kubeconfig.kubeconfig)?;
     config.save_kubeconfig(yaml)?;
     Ok(())
@@ -66,7 +95,8 @@ pub async fn handle_connect(
         std::process::exit(1);
     }
     println!("{} telepresence found", "✓".green());
-    let kubeconfig = client.download_kubeconfig_file(&id.cluster).await?;
+    let cluster_name = resolve_cluster_name(client, id).await?;
+    let kubeconfig = client.download_kubeconfig_file(&cluster_name).await?;
     let yaml = kubeconfig_to_yaml(&kubeconfig.kubeconfig)?;
     config.save_kubeconfig(yaml)?;
 

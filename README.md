@@ -28,25 +28,25 @@ cargo install --path .
 Login with your API token:
 
 ```bash
-k9 auth login --token <YOUR_TOKEN>
+canine auth login --token <YOUR_TOKEN>
 ```
 
 Optionally specify a custom host:
 
 ```bash
-k9 auth login --token <YOUR_TOKEN> --host https://your-host.com
+canine auth login --token <YOUR_TOKEN> --host https://your-host.com
 ```
 
 Check your authentication status:
 
 ```bash
-k9 auth status
+canine auth status
 ```
 
 Logout:
 
 ```bash
-k9 auth logout
+canine auth logout
 ```
 
 Credentials are stored in `~/.canine/canine.yaml`.
@@ -56,14 +56,14 @@ Credentials are stored in `~/.canine/canine.yaml`.
 List your projects:
 
 ```bash
-k9 project list
-k9 project list --all    # Include archived projects
-k9 project list --json   # Output as JSON
+canine project list
+canine project list --all    # Include archived projects
+canine project list --json   # Output as JSON
 ```
 
 Open a shell into a project:
 
 ```bash
-k9 project shell --name <PROJECT_NAME>
-k9 project shell --name <PROJECT_NAME> --container <CONTAINER_NAME>
+canine project shell --name <PROJECT_NAME>
+canine project shell --name <PROJECT_NAME> --container <CONTAINER_NAME>
 ```

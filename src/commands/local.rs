@@ -16,7 +16,7 @@ pub enum DockerComposeError {
 pub fn local_dir() -> PathBuf {
     dirs::home_dir()
         .expect("Could not determine home directory")
-        .join(".k9/local")
+        .join(".canine/src")
 }
 
 pub fn docker_compose_path() -> PathBuf {

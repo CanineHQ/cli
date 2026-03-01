@@ -2,7 +2,7 @@
 set -e
 
 REPO="CanineHQ/cli"
-BINARY_NAME="k9"
+BINARY_NAME="canine"
 INSTALL_DIR="/usr/local/bin"
 
 main() {
@@ -90,7 +90,7 @@ install_linux() {
 
     echo ""
     echo "Canine CLI installed successfully!"
-    echo "Run 'k9 --help' to get started."
+    echo "Run 'canine --help' to get started."
 }
 
 main

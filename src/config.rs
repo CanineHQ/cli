@@ -17,13 +17,13 @@ impl CanineConfig {
     pub fn credential_path() -> PathBuf {
         dirs::home_dir()
             .expect("Could not determine home directory")
-            .join(".k9/kubeconfig.yaml")
+            .join(".canine/kubeconfig.yaml")
     }
 
     pub fn config_path() -> PathBuf {
         dirs::home_dir()
             .expect("Could not determine home directory")
-            .join(".k9/canine.yaml")
+            .join(".canine/canine.yaml")
     }
 
     fn gate_directory(path: &Path) {
